@@ -22,17 +22,44 @@ welcome_message()
 
 print_header()
 {
+    clear
 	echo -e "${RED}-------------------------------------------------"
 	echo -e "${NC}\t--==[ arch-installer v0.1.0 ]==--"
-	echo -e "${RED}-------------------------------------------------\n"
+	echo -e "${RED}-------------------------------------------------\n${NC}"
 }
 
+# Setup disk
+setup_disk()
+{
+    # Creating partition
+    print_header
+    GETDISK=`fdisk -l | awk '/^Disk \//{print substr($2,0,33) substr($3,0,6) substr($4,0,3)}'`
+	echo -e "${GREEN}>> Hard Drive Setup\n\n${NC}[+] Available hard drives for installation:\n"
+	echo -e "$GETDISK\n"
+	read -p "[?] Please choose a device (/dev/sdXY): " drive
+	cfdisk /dev/$drive
+
+    # Display partition created and ask for confirmation
+    print_header
+    GETPARTITION=`fdisk -l $drive | awk '/^\/dev*/'`
+	echo -e "${GREEN}>> Hard Drive Setup\n\n${NC}[+] Partitions:\n"
+    echo -e "$GETPARTITION\n"
+	read -p "[?] Edit another hard drive? [y/n]: " choice
+    choice=${choice:-y}
+	if [ $choice == 'y' ]
+	then
+		setup_disk
+	fi
+
+
+}
 
 main()
 {
-	clear
 	print_header
 	welcome_message
+    setup_disk
+    #timedatectl set-ntp true
 }
 
 main
