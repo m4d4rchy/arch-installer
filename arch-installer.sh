@@ -51,6 +51,26 @@ setup_disk()
 		setup_disk
 	fi
 
+    # Partition Encryption
+    print_header
+    echo -e "${GREEN}>> Hard Drive Setup\n${NC}"
+	read -p "[?] Full encrypted partition? [y/n]: " choice
+    choice=${choice:-y}
+    if [ $choice == 'y' ]
+	then
+        echo -e "\n" && fdisk -l | awk '/^\/dev*/' && echo -e "\n"
+		read -p "[?] Select partition to encrypt (/dev/sdXY): " partition 
+        read -p "[?] Zero-out partition? [y/n]: " choice
+        choice=${choice:-y}
+        if [ $choice == 'y' ]
+        then
+            dd if=/dev/zero of=$partition status=progress
+        fi
+        cryptsetup -v -y -c aes-xts-plain64 -s 512 -h sha512 -i 5000 --use-random luksFormat /dev/$partition
+        read -p "[?] Partition name? (default: home): " choice
+        choice=${choice:-home}
+        cryptsetup luksOpen $partition $choice
+	fi
 
 }
 
