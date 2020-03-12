@@ -69,9 +69,40 @@ setup_disk()
         cryptsetup -v -y -c aes-xts-plain64 -s 512 -h sha512 -i 5000 --use-random luksFormat /dev/$partition
         read -p "[?] Partition name? (default: home): " choice
         choice=${choice:-home}
-        cryptsetup luksOpen $partition $choice
+        cryptsetup luksOpen $partition $choice 
 	fi
+	
+    # Partition file system and mount
+    print_header
+    echo -e "${GREEN}>> Hard Drive Setup\n${NC}"
+    echo -e "\n" && fdisk -l | awk '/^\/dev*/' && echo -e "\n"
+	read -p "[?] Root partition (/dev/sdXY): " root
+	read -p "[?] Root FS type (ext2, ext3, ext4, fat32): " fstype
+	mkfs.$fstype /dev/$root
+	read -p "[?] Home partition (/dev/sdXY - empty for none): " home
+	read -p "[?] Home FS type (ext2, ext3, ext4, fat32): " fstype
+	mkfs.$fstype /dev/$home
+	read -p "[?] Swap partition (/dev/sdXY - empty for none): " swap
 
+	mount /dev/$root /mnt
+    
+    if [!-z "$home"]
+    then
+	    mkdir /mnt/home
+	    mount /dev/$home /mnt/home
+    fi
+    
+    if [!-z "$swap"]
+    then
+        mkswap /dev/$swap
+        swapon /dev/$swap
+    fi
+	
+    '''pacstrap /mnt base linux linux-firmware
+	#mkdir /mnt/boot/efi
+	#mount /dev/$boot /mnt/boot/efi
+	genfstab -U /mnt >> /mnt/etc/fstab
+	arch-chroot /mnt'''
 }
 
 main()
