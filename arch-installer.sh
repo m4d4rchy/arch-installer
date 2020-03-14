@@ -115,12 +115,44 @@ setup_disk()
 	arch-chroot /mnt
 }
 
+# Setup date/time and language
+setup_date_lang()
+{
+    # Setup date and timezone
+    print_header
+    echo -e "${GREEN}>> Date/Time Setup\n${NC}"
+    timedatectl list-timezones
+    read -p "[?] Select your timezone (Zone/SubZone): " zone
+	ln -sf /usr/share/zoneinfo/$zone /etc/localtime
+	hwclock --systohc
+	date
+    read -p "[?] Is your date and time correct? [y/n]: " choice
+    choice=${choice:-y}
+	if [ $choice == 'n' ]
+	then
+		setup_date_lang
+	fi
+
+    # Setup language
+    print_header
+    echo -e "${GREEN}>> Language Setup\n${NC}"
+	pacman -S vim
+	vim /etc/locale.gen
+	locale-gen
+	echo -e ">> Language Setup\n\n"
+	read -p "[?] Set language [en_GB.UTF-8]: " language
+	echo "LANG=$language" >> /etc/locale.conf
+	read -p "[?] Set keymap [fr-latin1]: " keymap
+	echo "KEYMAP=$keymap" >> /etc/vconsole.conf
+}
+
 main()
 {
 	print_header
 	welcome_message
+    timedatectl set-ntp true
     setup_disk
-    #timedatectl set-ntp true
+    setup_date_lang
 }
 
 main
