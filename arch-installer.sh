@@ -146,6 +146,34 @@ setup_date_lang()
 	echo "KEYMAP=$keymap" >> /etc/vconsole.conf
 }
 
+# Setup User and hostname
+setup_user()
+{
+    # Setup hostname
+    print_header
+    echo -e "${GREEN}>> Hostname Setup\n${NC}"
+	read -p "[?] Set hostname: " hostname
+	echo "$hostname" > /etc/hostname
+	echo -e "\n127.0.0.1\tlocalhost\n::1\tlocalhost\n127.0.1.1\t$hostname.localdomain $hostname" >> /etc/hosts
+
+    # Installing and config sudo
+    pacman -S sudo
+	visudo
+
+    # Setup root and user account
+    print_header
+    echo -e "${GREEN}>> User/Root Setup\n${NC}"
+    echo "[?] Set root password"
+	passwd
+	read -p "[?] Set username: " username
+	useradd -m $username
+	passwd $username
+	usermod -aG wheel,audio,video,optical,storage $username
+    echo "[+] $username's groups:"
+	groups $username
+
+}
+
 main()
 {
 	print_header
@@ -153,6 +181,7 @@ main()
     timedatectl set-ntp true
     setup_disk
     setup_date_lang
+    setup_user
 }
 
 main
