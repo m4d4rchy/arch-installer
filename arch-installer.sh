@@ -37,7 +37,7 @@ setup_disk()
 	echo -e "${GREEN}>> Hard Drive Setup\n\n${NC}[+] Available hard drives for installation:\n"
 	echo -e "$GETDISK\n"
 	read -p "[?] Please choose a device (/dev/sdXY): " drive
-	cfdisk /dev/$drive
+	cfdisk $drive
 
     # Display partition created and ask for confirmation
     print_header
@@ -66,7 +66,7 @@ setup_disk()
         then
             dd if=/dev/zero of=$partition status=progress
         fi
-        cryptsetup -v -y -c aes-xts-plain64 -s 512 -h sha512 -i 5000 --use-random luksFormat /dev/$partition
+        cryptsetup -v -y -c aes-xts-plain64 -s 512 -h sha512 -i 5000 --use-random luksFormat $partition
         read -p "[?] Partition name? (default: home): " choice
         choice=${choice:-home}
         cryptsetup luksOpen $partition $choice 
@@ -75,34 +75,44 @@ setup_disk()
     # Partition file system and mount
     print_header
     echo -e "${GREEN}>> Hard Drive Setup\n${NC}"
+    read -p "[?] Do you want Dual Boot? [y/n]: " dualboot
+    dualboot=${dualboot:-y}
     echo -e "\n" && fdisk -l | awk '/^\/dev*/' && echo -e "\n"
+    blkid | grep /dev/mapper/ && echo -e "\n" #List encrypted partitions
+    if [ $dualboot == 'y' ]
+    then
+        read -p "[?] Boot efi partition (/dev/sdXY): " boot
+    fi
 	read -p "[?] Root partition (/dev/sdXY): " root
 	read -p "[?] Root FS type (ext2, ext3, ext4, fat32): " fstype
-	mkfs.$fstype /dev/$root
+	mkfs.$fstype $root
 	read -p "[?] Home partition (/dev/sdXY - empty for none): " home
 	read -p "[?] Home FS type (ext2, ext3, ext4, fat32): " fstype
-	mkfs.$fstype /dev/$home
+	mkfs.$fstype $home
 	read -p "[?] Swap partition (/dev/sdXY - empty for none): " swap
 
-	mount /dev/$root /mnt
+	mount $root /mnt
     
     if [!-z "$home"]
     then
 	    mkdir /mnt/home
-	    mount /dev/$home /mnt/home
+	    mount $home /mnt/home
     fi
     
     if [!-z "$swap"]
     then
-        mkswap /dev/$swap
-        swapon /dev/$swap
+        mkswap $swap
+        swapon $swap
     fi
 	
-    '''pacstrap /mnt base linux linux-firmware
-	#mkdir /mnt/boot/efi
-	#mount /dev/$boot /mnt/boot/efi
+    pacstrap /mnt base linux linux-firmware
+    if [ $dualboot == 'y' ]
+    then
+        mkdir /mnt/boot/efi
+	    mount $boot /mnt/boot/efi
+    fi
 	genfstab -U /mnt >> /mnt/etc/fstab
-	arch-chroot /mnt'''
+	arch-chroot /mnt
 }
 
 main()
