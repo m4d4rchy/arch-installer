@@ -8,11 +8,6 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Partitions
-BOOT='/dev/boot'
-ROOT='/dev/root'
-HOME='/dev/home'
-
 welcome_message()
 {
     echo -e "${GREEN}>> Welcome to the Archlinux installation wizard!\n\n${NC}Repository: $REPO\n${YELLOW}"
@@ -36,7 +31,7 @@ setup_disk()
     GETDISK=`fdisk -l | awk '/^Disk \//{print substr($2,0,33) substr($3,0,6) substr($4,0,3)}'`
 	echo -e "${GREEN}>> Hard Drive Setup\n\n${NC}[+] Available hard drives for installation:\n"
 	echo -e "$GETDISK\n"
-	read -p "[?] Please choose a device (/dev/sdXY): " drive
+	read -p "[?] Please choose a device (/dev/sdX): " drive
 	cfdisk $drive
 
     # Display partition created and ask for confirmation
@@ -84,23 +79,25 @@ setup_disk()
         read -p "[?] Boot efi partition (/dev/sdXY): " boot
     fi
 	read -p "[?] Root partition (/dev/sdXY): " root
-    ROOT = root
 	read -p "[?] Root FS type (ext2, ext3, ext4, fat32): " fstype
 	mkfs.$fstype $root
 	read -p "[?] Home partition (/dev/sdXY - empty for none): " home
-	read -p "[?] Home FS type (ext2, ext3, ext4, fat32): " fstype
-	mkfs.$fstype $home
+	if [ ! -z "$home" ]
+    then
+        read -p "[?] Home FS type (ext2, ext3, ext4, fat32): " fstype
+        mkfs.$fstype $home
+	fi
 	read -p "[?] Swap partition (/dev/sdXY - empty for none): " swap
 
 	mount $root /mnt
     
-    if [!-z "$home"]
+    if [ ! -z "$home" ]
     then
 	    mkdir /mnt/home
 	    mount $home /mnt/home
     fi
     
-    if [!-z "$swap"]
+    if [ ! -z "$swap" ]
     then
         mkswap $swap
         swapon $swap
@@ -113,7 +110,8 @@ setup_disk()
 	    mount $boot /mnt/boot/efi
     fi
 	genfstab -U /mnt >> /mnt/etc/fstab
-	arch-chroot /mnt
+    cp download /mnt
+	arch-chroot /mnt bash download 2
 }
 
 # Setup date/time and language
@@ -122,7 +120,7 @@ setup_date_lang()
     # Setup date and timezone
     print_header
     echo -e "${GREEN}>> Date/Time Setup\n${NC}"
-    timedatectl list-timezones
+    #timedatectl list-timezones
     read -p "[?] Select your timezone (Zone/SubZone): " zone
 	ln -sf /usr/share/zoneinfo/$zone /etc/localtime
 	hwclock --systohc
@@ -178,15 +176,9 @@ setup_user()
 # Setup Networking
 setup_network()
 {
-	pacman -S dhcpcd networkmanager 
+	pacman -S dhcpcd dialog networkmanager
 	systemctl enable dhcpcd
 	systemctl enable NetworkManager
-	read -p "[?] Install wifi (dialog & wpa_supplicant)? [y/n]: " choice
-    choice=${choice:-y}
-	if [ $choice == 'y' ]
-	then
-		pacman -S dialog wpa_supplicant
-	fi
 }
 
 # Installing grub
@@ -198,25 +190,30 @@ setup_grub()
 	if [ $dualboot == 'y' ]
 	then
 		pacman -S efibootmgr os-prober
-		grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=arch_grub --recheck --debug
-	fi
+		grub-install --target=x86_64-efi --efi-directory=/boot/efi --recheck --debug
     else
-	then
-		grub-install $ROOT
+        GETDISK=`fdisk -l | awk '/^Disk \//{print substr($2,0,33) substr($3,0,6) substr($4,0,3)}'`
+        echo -e "$GETDISK\n"
+	    read -p "[?] Please choose device to install grub (/dev/sdX): " drive
+		grub-install $drive
 	fi
 	grub-mkconfig -o /boot/grub/grub.cfg
 }
 
 main()
 {
-	print_header
-	welcome_message
-    timedatectl set-ntp true
-    setup_disk
-    setup_date_lang
-    setup_user
-    setup_network
-    setup_grub
+    if [ $1 == 2 ]
+    then
+        setup_date_lang
+        setup_user
+        setup_network
+        setup_grub
+    else
+        print_header
+        welcome_message
+        setup_disk
+    fi
+
 }
 
-main
+main $1
