@@ -174,6 +174,20 @@ setup_user()
 
 }
 
+# Setup Networking
+setup_network()
+{
+	pacman -S dhcpcd networkmanager 
+	systemctl enable dhcpcd
+	sudo systemctl enable NetworkManager
+	read -p "[?] Install wifi (dialog & wpa_supplicant)? [y/n]: " choice
+    choice=${choice:-y}
+	if [ $choice == 'y' ]
+	then
+		sudo pacman -S dialog wpa_supplicant
+	fi
+}
+
 main()
 {
 	print_header
