@@ -84,6 +84,7 @@ setup_disk()
         read -p "[?] Boot efi partition (/dev/sdXY): " boot
     fi
 	read -p "[?] Root partition (/dev/sdXY): " root
+    ROOT = root
 	read -p "[?] Root FS type (ext2, ext3, ext4, fat32): " fstype
 	mkfs.$fstype $root
 	read -p "[?] Home partition (/dev/sdXY - empty for none): " home
@@ -179,13 +180,31 @@ setup_network()
 {
 	pacman -S dhcpcd networkmanager 
 	systemctl enable dhcpcd
-	sudo systemctl enable NetworkManager
+	systemctl enable NetworkManager
 	read -p "[?] Install wifi (dialog & wpa_supplicant)? [y/n]: " choice
     choice=${choice:-y}
 	if [ $choice == 'y' ]
 	then
-		sudo pacman -S dialog wpa_supplicant
+		pacman -S dialog wpa_supplicant
 	fi
+}
+
+# Installing grub
+setup_grub()
+{
+	# Installing grub
+	pacman -S grub
+	read -p "[?] Do you have other OS installed with Arch? [y/n]: " dualboot
+	if [ $dualboot == 'y' ]
+	then
+		pacman -S efibootmgr os-prober
+		grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=arch_grub --recheck --debug
+	fi
+    else
+	then
+		grub-install $ROOT
+	fi
+	grub-mkconfig -o /boot/grub/grub.cfg
 }
 
 main()
@@ -196,6 +215,8 @@ main()
     setup_disk
     setup_date_lang
     setup_user
+    setup_network
+    setup_grub
 }
 
 main
