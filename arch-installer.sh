@@ -1,6 +1,7 @@
 #!/bin/bash
 
 REPO='https://gitlab.com/m4d4rchy/arch-installer'
+VERSION='0.1.0'
 
 # Colors
 RED='\033[0;31m'
@@ -19,7 +20,7 @@ print_header()
 {
     clear
 	echo -e "${RED}-------------------------------------------------"
-	echo -e "${NC}\t--==[ arch-installer v0.1.0 ]==--"
+	echo -e "${NC}\t--==[ arch-installer v$VERSION ]==--"
 	echo -e "${RED}-------------------------------------------------\n${NC}"
 }
 
