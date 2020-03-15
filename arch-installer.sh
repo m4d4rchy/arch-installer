@@ -214,12 +214,6 @@ setup_grub()
 install_graphical()
 {
     print_header
-    echo -ne '#####                     (33%)\r'
-    sleep 1
-    echo -ne '#############             (66%)\r'
-    sleep 1
-    echo -ne '#######################   (100%)\r'
-    echo -ne '\n'
     pacman -S mesa xorg-server xorg-apps xorg-xinit xorg-twm xorg-xclock
     echo -e "${GREEN}>> Graphical Installation\n${NC}"
     echo -e "\t[1] Desktop Environement\n\t[2] Window Manager"
