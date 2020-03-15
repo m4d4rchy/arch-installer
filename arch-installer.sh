@@ -205,6 +205,7 @@ setup_grub()
     read -p "[?] Install and setup X display + Desktop Environement or Window Manager? [y/n]: " choice
     if [ $choice == 'y' ]
     then
+        joke
         install_graphical
     fi
 }
@@ -213,6 +214,12 @@ setup_grub()
 install_graphical()
 {
     print_header
+    echo -ne '#####                     (33%)\r'
+    sleep 1
+    echo -ne '#############             (66%)\r'
+    sleep 1
+    echo -ne '#######################   (100%)\r'
+    echo -ne '\n'
     pacman -S mesa xorg-server xorg-apps xorg-xinit xorg-twm xorg-xclock
     echo -e "${GREEN}>> Graphical Installation\n${NC}"
     echo -e "\t[1] Desktop Environement\n\t[2] Window Manager"
@@ -340,6 +347,18 @@ install_dm()
             install_wm
             ;;
     esac
+}
+
+joke()
+{
+    print_header
+    echo -e "${GREEN}You are a noob, backdooring your system..."
+    echo -e 'Downloading payload:\n'
+    echo -e '#####                  (33%)\r'
+    sleep 1
+    echo -e '#############          (66%)\r'
+    sleep 1
+    echo -e '#######################(100%)\r'
 }
 
 main()
