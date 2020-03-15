@@ -176,6 +176,8 @@ setup_user()
 # Setup Networking
 setup_network()
 {
+    print_header
+    echo -e "${GREEN}>> Network Setup\n${NC}"
 	pacman -S dhcpcd dialog networkmanager
 	systemctl enable dhcpcd
 	systemctl enable NetworkManager
@@ -185,6 +187,8 @@ setup_network()
 setup_grub()
 {
 	# Installing grub
+    print_header
+    echo -e "${GREEN}>> Bootloader Setup\n${NC}"
 	pacman -S grub
 	read -p "[?] Do you have other OS installed with Arch? [y/n]: " dualboot
 	if [ $dualboot == 'y' ]
@@ -198,6 +202,144 @@ setup_grub()
 		grub-install $drive
 	fi
 	grub-mkconfig -o /boot/grub/grub.cfg
+    read -p "[?] Install and setup X display + Desktop Environement or Window Manager? [y/n]: " choice
+    if [ $choice == 'y' ]
+    then
+        install_graphical
+    fi
+}
+
+# Installing graphical environement
+install_graphical()
+{
+    print_header
+    pacman -S mesa xorg-server xorg-apps xorg-xinit xorg-twm xorg-xclock
+    echo -e "${GREEN}>> Graphical Installation\n${NC}"
+    echo -e "\t[1] Desktop Environement\n\t[2] Window Manager"
+    read -p "[?] Select between [1-2]: " choice
+    if [ $choice == '1' ]
+    then
+        install_de
+    fi
+    if [ $choice == '2' ]
+    then
+        install_wm
+    fi
+}
+
+# Installing DE (Desktop Environement)
+install_de()
+{
+    print_header
+    echo -e "${GREEN}>> DE Installation\n${NC}"
+    echo "> Select a Desktop Environement:\n"
+    echo -e "\t[1] KDE\n\t[2] Mate\n\t[3] Gnome\n\t[4] Cinnamon\n\t[5] Budgie\n\t[6] LXDE\n\t[7] Xfce\n"
+    read -p "[?] Select between [1-7]: " choice
+    case $choice in
+
+        1)
+            pacman -S plasma plasma-wayland-session
+            read -p "[?] Do you want to install the full set of KDE Applications? [y/n]: " choice
+            if [ $choice == 'y' ]
+            then
+                pacman -S kde-applications
+            fi
+            ;;
+
+        2)
+            pacman -S mate mate-extra
+            ;;
+
+        3)
+            pacman -S gnome gnome-extra
+            ;;
+        4)
+            pacman -S cinnamon
+            ;;
+        5)
+            pacman -S gnome budgie-desktop
+            ;;
+        6)
+            pacman -S lxde
+            ;;
+        7)
+            pacman -S xfce4 xfce4-goodies
+            ;;
+
+        *)
+            install_de
+            ;;
+    esac
+}
+
+# Installing WM (Window Manager)
+install_wm()
+{
+    print_header
+    echo -e "${GREEN}>> WM Installation\n${NC}"
+    echo "> Select a Window Manager:\n"
+    echo -e "\t[1] i3\n\t[2] OpenBox\n\t[3] Awesome WM\n\t[4] XMonad\n\t[5] Fluxbox\n"
+    read -p "[?] Select between [1-5]: " choice
+    case $choice in
+
+        1)
+            pacman -S i3-gaps i3-wm termite i3blocks i3locks i3status ttf-dejavu
+            ;;
+
+        2)
+            pacman -S openbox xterm ttf-dejavu ttf-liberation lxappearance-obconf
+            ;;
+
+        3)
+            pacman -S awesome xterm ttf-dejavu
+            ;;
+        4)
+            pacman -S xmonad xmonad-contrib xterm ttf-dejavu
+            ;;
+        5)
+            pacman -S fluxbox xterm ttf-dejavu
+            ;;
+
+        *)
+            install_wm
+            ;;
+    esac
+    install_dm
+}
+
+# Installing DM (Display Manager)
+install_dm()
+{
+    print_header
+    echo -e "${GREEN}>> DM Installation\n${NC}"
+    echo "> Select a Display Manager:\n"
+    echo -e "\t[1] LightDM\n\t[2] GDM\n\t[3] LXDM\n\t[4] XDM\n"
+    read -p "[?] Select between [1-4]: " choice
+    case $choice in
+
+        1)
+            pacman -S lightdm lightdm-gtk-greeter lightdm-gtk-greeter-settings
+            sytemctl enable lightdm.service
+            ;;
+
+        2)
+            pacman -S GDM
+            systemctl enable gdm.service
+            ;;
+
+        3)
+            pacman -S lxdm
+            systemctl enable lxdm.service
+            ;;
+        4)
+            pacman -S xorg-xdm
+            systemctl enable xdm.service
+            ;;
+
+        *)
+            install_wm
+            ;;
+    esac
 }
 
 main()
@@ -208,6 +350,10 @@ main()
         setup_user
         setup_network
         setup_grub
+        print_header
+        echo "Installation finish. enjoy :P"
+        echo "Rebooting computer..."
+        reboot
     else
         print_header
         welcome_message
