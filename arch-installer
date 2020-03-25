@@ -112,8 +112,17 @@ setup_disk()
     fi
 	genfstab -U /mnt >> /mnt/etc/fstab
     cp download /mnt
-	arch-chroot /mnt bash download 2
+	arch-chroot /mnt bash arch-installer 2
 }
+
+# Update pacman db
+update_packages()
+{
+    print_header
+    echo -e "${GREEN}>> Update Packages\n${NC}"
+    pacman -Syu
+}
+
 
 # Setup date/time and language
 setup_date_lang()
@@ -360,6 +369,7 @@ main()
 {
     if [ $1 == 2 ]
     then
+        update_packages
         setup_date_lang
         setup_user
         setup_network
